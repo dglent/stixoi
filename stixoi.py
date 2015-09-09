@@ -20,7 +20,7 @@ class Stixoi():
         list_found_songs = []
         relevance_list = []
         for key, val in self.songs_dic.items():
-            if int(val[0][:-1]) >= 70:
+            if int(val[0][:-1]) >= 95:
                 relevance_list.append(int(val[0][:-1]))
                 list_found_songs.append(key)
         relevance_list.sort()
@@ -57,12 +57,17 @@ class Stixoi():
         print(str(logia)[16:-23])
 
     def now_playing(self):
+        artist = ''
         session_bus = dbus.SessionBus()
         player = session_bus.get_object('org.mpris.clementine', '/Player')
         iface = dbus.Interface(player, dbus_interface='org.freedesktop.MediaPlayer')
         metadata = iface.GetMetadata()
         title = metadata["title"]
-        return title
+        try:
+            artist = metadata["artist"]
+        except KeyError:
+            artist = ''
+        return title + '+' + artist
 
     def search_songs(self, track_playing):
         title = track_playing.replace("'", "")
@@ -118,7 +123,7 @@ class Stixoi():
         for key,val in self.songs_dic.items():
             if key == song:
                 print('__________________\n')
-                print('Τραγούδι:    ', key, ': "' + val[1] + '",', val[0])
+                print('Τραγούδι:    ', key, ': "' + val[1][1:] + '",', val[0])
                 print('Στιχουργός:  ', val[2])
                 print('Συνθέτης:    ', val[3])
                 print('1η εκτέλεση: ', val[4])
