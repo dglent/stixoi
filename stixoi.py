@@ -16,6 +16,7 @@ class Stixoi():
         self.url_suffix = '&act=ss'
         self.songs_dic = {}
         track_playiyng = self.now_playing()
+        self.search_times = 0
         self.search_parser(track_playiyng)
         list_found_songs = []
         relevance_list = []
@@ -62,15 +63,15 @@ class Stixoi():
         player = session_bus.get_object('org.mpris.clementine', '/Player')
         iface = dbus.Interface(player, dbus_interface='org.freedesktop.MediaPlayer')
         metadata = iface.GetMetadata()
-        title = metadata["title"]
+        self.title = metadata["title"]
         try:
             artist = metadata["artist"]
         except KeyError:
             artist = ''
-        return title + '+' + artist
+        return self.title + '+' + artist
 
     def search_songs(self, track_playing):
-        title = track_playing.replace("'", "")
+        title = track_playing.replace("'", " ")
         string_to_search = repr(title.encode('utf-8')).replace("b'","").replace(
             "\\x","%").replace("'","").replace(' ', '+')
         search_results_html = ''
@@ -118,6 +119,10 @@ class Stixoi():
             if counter == 5:
                 self.songs_dic[song_id].append(val)
                 counter = 0
+        # If cannot find with title + artist try only with title
+        if len(self.songs_dic) == 0 and self.search_times == 0:
+            self.search_times = 1
+            self.search_parser(self.title)
 
     def list_search_results(self, song):
         for key,val in self.songs_dic.items():
