@@ -50,25 +50,28 @@ class Stixoi():
         req = urllib.request.Request(self.lyrics_prefix + song_id, headers=self.header)
         for word in urllib.request.urlopen(req).readlines():
             lyrics += word.strip().decode('utf-8')
-            lyrics += '\n'
+            lyrics = lyrics.replace('<br />', '\n')
         soup = BeautifulSoup(lyrics)
-        lista = soup.find_all('center')
-        logia = lista[0].find_all('meta')
+        td = soup.find_all('td')
+        logia = str(td[0]).replace('<br/>', '\n').split('</td></tr>')
         print('\n')
-        print(str(logia)[16:-23])
+        for i in logia:
+            if i.count('</table></div>'):
+                print((re.sub('<[^>]*>', '', i)).strip())
+                break
 
     def now_playing(self):
-        artist = ''
+        self.artist = ''
         session_bus = dbus.SessionBus()
         player = session_bus.get_object('org.mpris.clementine', '/Player')
         iface = dbus.Interface(player, dbus_interface='org.freedesktop.MediaPlayer')
         metadata = iface.GetMetadata()
         self.title = metadata["title"]
         try:
-            artist = metadata["artist"]
+            self.artist = metadata["artist"]
         except KeyError:
-            artist = ''
-        return self.title + '+' + artist
+            self.artist = ''
+        return self.title + '+' + self.artist
 
     def search_songs(self, track_playing):
         title = track_playing.replace("'", " ")
@@ -122,7 +125,7 @@ class Stixoi():
         # If cannot find with title + artist try only with title
         if len(self.songs_dic) == 0 and self.search_times == 0:
             self.search_times = 1
-            self.search_parser(self.title)
+            self.search_parser('"' + self.title + '"')
 
     def list_search_results(self, song):
         for key,val in self.songs_dic.items():
