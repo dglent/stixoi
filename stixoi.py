@@ -8,10 +8,12 @@ import re
 import urllib.request
 import dbus
 
+
 class Stixoi():
     def __init__(self):
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Linux)'}
-        self.lyrics_prefix = 'http://www.stixoi.info/stixoi.php?info=Lyrics&act=details&song_id='
+        self.lyrics_prefix = ('http://www.stixoi.info/stixoi.php?info='
+                              'Lyrics&act=details&song_id=')
         self.url_prefix = 'http://www.stixoi.info/stixoi.php?info=SS&keywords='
         self.url_suffix = '&act=ss'
         self.songs_dic = {}
@@ -27,14 +29,14 @@ class Stixoi():
         relevance_list.sort()
         show_once = []
         for percent in relevance_list:
-            for key,val in self.songs_dic.items():
+            for key, val in self.songs_dic.items():
                 if percent == int(val[0][:-1]):
                     if key not in show_once:
                         self.list_search_results(key)
                         show_once.append(key)
         if len(list_found_songs) == 1:
             self.lyrics_parser(list_found_songs[0])
-        if len(list_found_songs) > 1:
+        elif len(list_found_songs) > 1:
             print('Σύνολο: ', len(list_found_songs))
             song_id = input('Εισαγάγετε το αναγνωριστικό τραγουδιού:\n')
             for i in list_found_songs:
@@ -44,10 +46,13 @@ class Stixoi():
                     print('__________________')
                     self.lyrics_parser(i)
                     break
+        else:
+            print('No results')
 
     def lyrics_parser(self, song_id):
         lyrics = ''
-        req = urllib.request.Request(self.lyrics_prefix + song_id, headers=self.header)
+        req = urllib.request.Request(self.lyrics_prefix +
+                                     song_id, headers=self.header)
         for word in urllib.request.urlopen(req).readlines():
             lyrics += word.strip().decode('utf-8')
             lyrics = lyrics.replace('<br />', '\n')
@@ -64,7 +69,8 @@ class Stixoi():
         self.artist = ''
         session_bus = dbus.SessionBus()
         player = session_bus.get_object('org.mpris.clementine', '/Player')
-        iface = dbus.Interface(player, dbus_interface='org.freedesktop.MediaPlayer')
+        iface = dbus.Interface(player,
+                               dbus_interface='org.freedesktop.MediaPlayer')
         metadata = iface.GetMetadata()
         self.title = metadata["title"]
         try:
@@ -79,7 +85,8 @@ class Stixoi():
             "\\x","%").replace("'","").replace(' ', '+')
         search_results_html = ''
         req = urllib.request.Request(
-            self.url_prefix + string_to_search + self.url_suffix, headers=self.header)
+            self.url_prefix + string_to_search +
+            self.url_suffix, headers=self.header)
         for word in urllib.request.urlopen(req).readlines():
             search_results_html += word.strip().decode('utf-8')
         return search_results_html
@@ -117,7 +124,7 @@ class Stixoi():
                 continue
             if counter == 4:
                 self.songs_dic[song_id].append(val)
-                counter +=1
+                counter += 1
                 continue
             if counter == 5:
                 self.songs_dic[song_id].append(val)
@@ -128,7 +135,7 @@ class Stixoi():
             self.search_parser('"' + self.title + '"')
 
     def list_search_results(self, song):
-        for key,val in self.songs_dic.items():
+        for key, val in self.songs_dic.items():
             if key == song:
                 print('__________________\n')
                 print('Τραγούδι:    ', key, ': "' + val[1][1:] + '",', val[0])
