@@ -47,7 +47,7 @@ class Stixoi():
                     self.lyrics_parser(i)
                     break
         else:
-            print('No results')
+            print('Ουδέν αποτέλεσμα')
 
     def lyrics_parser(self, song_id):
         lyrics = ''
