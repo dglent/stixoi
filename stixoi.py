@@ -81,8 +81,9 @@ class Stixoi():
 
     def search_songs(self, track_playing):
         title = track_playing.replace("'", " ")
-        string_to_search = repr(title.encode('utf-8')).replace("b'","").replace(
-            "\\x","%").replace("'","").replace(' ', '+')
+        string_to_search = (repr(title.encode('utf-8')).replace("b'", "").
+                            replace("\\x", "%").replace("'", "").
+                            replace(' ', '+'))
         search_results_html = ''
         req = urllib.request.Request(
             self.url_prefix + string_to_search +
