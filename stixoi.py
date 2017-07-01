@@ -62,7 +62,8 @@ class Stixoi():
         print('\n')
         for i in logia:
             if i.count('</table></div>'):
-                print((re.sub('<[^>]*>', '', i)).strip())
+                # remove advertisement string at the last 50 characters
+                print((re.sub('<[^>]*>', '', i)).strip()[:-50])
                 break
 
     def now_playing(self):
