@@ -56,7 +56,7 @@ class Stixoi():
         for word in urllib.request.urlopen(req).readlines():
             lyrics += word.strip().decode('utf-8')
             lyrics = lyrics.replace('<br />', '\n')
-        soup = BeautifulSoup(lyrics)
+        soup = BeautifulSoup(lyrics, 'lxml')
         td = soup.find_all('td')
         logia = str(td[0]).replace('<br/>', '\n').split('</td></tr>')
         print('\n')
@@ -95,7 +95,7 @@ class Stixoi():
 
     def search_parser(self, track_playiyng):
         search_results_html = self.search_songs(track_playiyng)
-        html_soup = BeautifulSoup(search_results_html)
+        html_soup = BeautifulSoup(search_results_html, 'lxml')
         lista = html_soup.find_all('center')[2]
         counter = 0
         relevance = ''
