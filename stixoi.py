@@ -51,8 +51,9 @@ class Stixoi():
 
     def lyrics_parser(self, song_id):
         lyrics = ''
-        req = urllib.request.Request(self.lyrics_prefix +
-                                     song_id, headers=self.header)
+        req = urllib.request.Request(
+            self.lyrics_prefix + song_id, headers=self.header
+        )
         for word in urllib.request.urlopen(req).readlines():
             lyrics += word.strip().decode('utf-8')
             lyrics = lyrics.replace('<br />', '\n')
@@ -91,8 +92,9 @@ class Stixoi():
                             replace(' ', '+'))
         search_results_html = ''
         req = urllib.request.Request(
-            self.url_prefix + string_to_search +
-            self.url_suffix, headers=self.header)
+            self.url_prefix + string_to_search + self.url_suffix,
+            headers=self.header
+        )
         for word in urllib.request.urlopen(req).readlines():
             search_results_html += word.strip().decode('utf-8')
         return search_results_html
