@@ -69,7 +69,6 @@ class Stixoi():
                 break
 
     def now_playing(self):
-        self.artist = ''
         bus = dbus.SessionBus()
         try:
             proxy = bus.get_object(
@@ -86,7 +85,11 @@ class Stixoi():
             'org.mpris.MediaPlayer2.Player', 'Metadata'
         )
 
-        self.artist = str(metadata.get('xesam:artist')[0])
+        try:
+            self.artist = str(metadata.get('xesam:artist')[0])
+        except TypeError:
+            self.artist = ''
+
         self.title = str(metadata.get('xesam:title'))
 
         return self.title + '+' + self.artist
