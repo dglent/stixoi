@@ -65,6 +65,7 @@ class Stixoi():
             if i.count('</table></div>'):
                 # remove advertisement string at the last 50 characters
                 print((re.sub('<[^>]*>', '', i)).strip()[:-50])
+                print('Url: ' + self.lyrics_prefix + song_id)
                 break
 
     def now_playing(self):
