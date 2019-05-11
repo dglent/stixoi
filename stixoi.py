@@ -71,9 +71,14 @@ class Stixoi():
     def now_playing(self):
         self.artist = ''
         bus = dbus.SessionBus()
-        proxy = bus.get_object(
-            'org.mpris.MediaPlayer2.clementine', '/org/mpris/MediaPlayer2'
-        )
+        try:
+            proxy = bus.get_object(
+                'org.mpris.MediaPlayer2.clementine', '/org/mpris/MediaPlayer2'
+            )
+        except dbus.exceptions.DBusException:
+            proxy = bus.get_object(
+                'org.mpris.MediaPlayer2.strawberry', '/org/mpris/MediaPlayer2'
+            )
         properties_manager = dbus.Interface(
             proxy, 'org.freedesktop.DBus.Properties'
         )
