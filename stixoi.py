@@ -68,16 +68,20 @@ class Stixoi():
 
     def now_playing(self):
         self.artist = ''
-        session_bus = dbus.SessionBus()
-        player = session_bus.get_object('org.mpris.clementine', '/Player')
-        iface = dbus.Interface(player,
-                               dbus_interface='org.freedesktop.MediaPlayer')
-        metadata = iface.GetMetadata()
-        self.title = metadata["title"]
-        try:
-            self.artist = metadata["artist"]
-        except KeyError:
-            self.artist = ''
+        bus = dbus.SessionBus()
+        proxy = bus.get_object(
+            'org.mpris.MediaPlayer2.clementine', '/org/mpris/MediaPlayer2'
+        )
+        properties_manager = dbus.Interface(
+            proxy, 'org.freedesktop.DBus.Properties'
+        )
+        metadata = properties_manager.Get(
+            'org.mpris.MediaPlayer2.Player', 'Metadata'
+        )
+
+        self.artist = str(metadata.get('xesam:artist')[0])
+        self.title = str(metadata.get('xesam:title'))
+
         return self.title + '+' + self.artist
 
     def search_songs(self, track_playing):
