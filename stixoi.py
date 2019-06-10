@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Purpose: Fetch Clementine playing song lyrics (Greek) from stixoi.info
+# Purpose: Fetch Clementine/Strawberry playing song lyrics (Greek) from stixoi.info
 # Author:  Dimitrios Glentadakis <dglent@free.fr>
 # License: GPLv3
 
