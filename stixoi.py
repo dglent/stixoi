@@ -7,16 +7,20 @@ from bs4 import BeautifulSoup
 import re
 import urllib.request
 import dbus
+import sys
 
 
 class Stixoi():
-    def __init__(self):
+    def __init__(self, *args):
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Linux)'}
         self.lyrics_prefix = ('http://www.stixoi.info/stixoi.php?info='
                               'Lyrics&act=details&song_id=')
         self.url_prefix = 'http://www.stixoi.info/stixoi.php?info=SS&keywords='
         self.url_suffix = '&act=ss'
         self.songs_dic = {}
+        self.song_only = False
+        if '-s' in args[0]:
+            self.song_only = True
         track_playiyng = self.now_playing()
         self.search_times = 0
         self.search_parser(track_playiyng)
@@ -68,16 +72,22 @@ class Stixoi():
                 print('Url: ' + self.lyrics_prefix + song_id)
                 break
 
-    def now_playing(self):
-        bus = dbus.SessionBus()
+    def get_proxy(self, bus, player):
         try:
             proxy = bus.get_object(
-                'org.mpris.MediaPlayer2.clementine', '/org/mpris/MediaPlayer2'
+                f'org.mpris.MediaPlayer2.{player}', '/org/mpris/MediaPlayer2'
             )
+            return proxy
         except dbus.exceptions.DBusException:
-            proxy = bus.get_object(
-                'org.mpris.MediaPlayer2.strawberry', '/org/mpris/MediaPlayer2'
-            )
+            return False
+
+    def now_playing(self):
+        bus = dbus.SessionBus()
+        for player in ['clementine', 'strawberry', 'sayonara']:
+            proxy = self.get_proxy(bus, player)
+            if proxy:
+                break
+
         properties_manager = dbus.Interface(
             proxy, 'org.freedesktop.DBus.Properties'
         )
@@ -87,6 +97,8 @@ class Stixoi():
 
         try:
             self.artist = str(metadata.get('xesam:artist')[0])
+            if self.song_only:
+                raise TypeError
         except TypeError:
             self.artist = ''
 
@@ -104,6 +116,7 @@ class Stixoi():
             self.url_prefix + string_to_search + self.url_suffix,
             headers=self.header
         )
+        print('URL αναζήτησης: ' + self.url_prefix + string_to_search + self.url_suffix)
         for word in urllib.request.urlopen(req).readlines():
             search_results_html += word.strip().decode('utf-8')
         return search_results_html
@@ -147,8 +160,9 @@ class Stixoi():
                 self.songs_dic[song_id].append(val)
                 counter = 0
         # If cannot find with title + artist try only with title
-        if len(self.songs_dic) == 0 and self.search_times == 0:
+        if len(self.songs_dic) == 0 and self.search_times == 0 and not self.song_only:
             self.search_times = 1
+            print('Κανένα αποτέλεσμα. Αναζήτηση μόνο με τον τίτλο του τραγουδιού...')
             self.search_parser('"' + self.title + '"')
 
     def list_search_results(self, song):
@@ -163,4 +177,4 @@ class Stixoi():
 
 
 if __name__ == '__main__':
-    app = Stixoi()
+    app = Stixoi(sys.argv[1:])
