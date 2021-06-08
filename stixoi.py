@@ -13,9 +13,9 @@ import sys
 class Stixoi():
     def __init__(self, *args):
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Linux)'}
-        self.lyrics_prefix = ('http://www.stixoi.info/stixoi.php?info='
+        self.lyrics_prefix = ('https://stixoi.info/stixoi.php?info='
                               'Lyrics&act=details&song_id=')
-        self.url_prefix = 'http://www.stixoi.info/stixoi.php?info=SS&keywords='
+        self.url_prefix = 'https://stixoi.info/stixoi.php?info=SS&keywords='
         self.url_suffix = '&act=ss'
         self.songs_dic = {}
         self.song_only = False
@@ -107,7 +107,7 @@ class Stixoi():
         return self.title + '+' + self.artist
 
     def search_songs(self, track_playing):
-        title = track_playing.replace("'", " ")
+        title = track_playing.replace("'", "")
         string_to_search = (repr(title.encode('utf-8')).replace("b'", "").
                             replace("\\x", "%").replace("'", "").
                             replace(' ', '+'))
