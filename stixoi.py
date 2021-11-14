@@ -105,8 +105,9 @@ class Stixoi():
                 album = ''
             else:
                 album = album.text.replace('Album:', '')
+            song_title = title_year[0].replace('-', ' ')
             self.results[counter] = {
-                'song': title_year[0],
+                'song': song_title.strip(),
                 'artist': artist.strip(),
                 'playing_artist_keywords': self.artist.strip().split(' '),
                 'album': album.strip(),
@@ -122,11 +123,28 @@ class Stixoi():
                 self.results[i]['score'] += 1
             song_keys = [self.remove_accents(s.lower()) for s in self.results[i]['song'].split(' ')]
             playing_song_keys = [self.remove_accents(s.lower()) for s in self.title.split(' ')]
+            album_keys = [self.remove_accents(s.lower()) for s in self.results[i]['album'].split(' ')]
+            playing_album_keys = [
+                self.remove_accents(s.lower().replace('-', ' ')) for s in self.album.split(' ')
+            ]
             for key in playing_song_keys:
                 if key in song_keys:
                     self.results[i]['score'] += 1
+            for key in playing_album_keys:
+                if key in album_keys:
+                    self.results[i]['score'] += 1
+            if (
+                self.remove_accents(self.title.lower().strip())
+                == self.remove_accents(self.results[i]['song'].lower().strip())
+            ):
+                self.results[i]['score'] += 2
+            if (
+                self.remove_accents(self.album.lower().strip())
+                == self.remove_accents(self.results[i]['album'].lower().strip())
+            ):
+                self.results[i]['score'] += 2
             if self.year == self.results[i]['year']:
-                self.results[i]['score'] += 1
+                self.results[i]['score'] += 2
             for key in self.results[i]['playing_artist_keywords']:
                 if key in self.results[i]['artist'].split(' '):
                     self.results[i]['score'] += 1
