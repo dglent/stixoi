@@ -53,6 +53,7 @@ class Stixoi():
         string_to_search = ''
         search_results_html = ''
         for i in self.title:
+            i = i.replace("'", " ")  # replace apostrophe with space
             gramma = repr(i.encode('utf-8'))
             gramma = gramma.replace('''b"'"''', '%27')
             gramma = gramma.replace("b'", "", 1)
@@ -66,7 +67,7 @@ class Stixoi():
         print(f'| Δίσκος: {self.album}')
         print(f'| Έτος: {self.year}')
         print('---------------------------------')
-        url = f'{self.url}{self.title}'
+        url = self.url + self.title.replace("'", "+")  # replace apostrophe with +
         print('URL αναζήτησης: ', f'{self.url}{string_to_search}')
         html = self.get_html(url)
         return html
