@@ -1,76 +1,21 @@
-#!/usr/bin/python3
-# Purpose: Fetch Clementine/Strawberry playing song lyrics (Greek) from stixoi.info
-# Author:  Dimitrios Glentadakis <dglent@free.fr>
-# License: GPLv3
+#!/usr/bin/python
 
 from bs4 import BeautifulSoup
 import re
-import urllib.request
+import requests
 import dbus
 import sys
+from operator import itemgetter
 
 
 class Stixoi():
-    def __init__(self, *args):
-        self.header = {'User-Agent': 'Mozilla/5.0 (X11; Linux)'}
-        self.lyrics_prefix = ('https://stixoi.info/stixoi.php?info='
-                              'Lyrics&act=details&song_id=')
-        self.url_prefix = 'https://stixoi.info/stixoi.php?info=SS&keywords='
-        self.url_suffix = '&act=ss'
-        self.songs_dic = {}
-        self.song_only = False
-        if '-s' in args[0]:
-            self.song_only = True
-        track_playiyng = self.now_playing()
-        self.search_times = 0
-        self.search_parser(track_playiyng)
-        list_found_songs = []
-        relevance_list = []
-        for key, val in self.songs_dic.items():
-            if int(val[0][:-1]) >= 95:
-                relevance_list.append(int(val[0][:-1]))
-                list_found_songs.append(key)
-        relevance_list.sort()
-        show_once = []
-        for percent in relevance_list:
-            for key, val in self.songs_dic.items():
-                if percent == int(val[0][:-1]):
-                    if key not in show_once:
-                        self.list_search_results(key)
-                        show_once.append(key)
-        if len(list_found_songs) == 1:
-            self.lyrics_parser(list_found_songs[0])
-        elif len(list_found_songs) > 1:
-            print('Σύνολο: ', len(list_found_songs))
-            song_id = input('Εισαγάγετε το αναγνωριστικό τραγουδιού:\n')
-            for i in list_found_songs:
-                if i == song_id:
-                    print('__________________\n')
-                    print(self.songs_dic[i][1])
-                    print('__________________')
-                    self.lyrics_parser(i)
-                    break
-        else:
-            print('Ουδέν αποτέλεσμα')
-
-    def lyrics_parser(self, song_id):
-        lyrics = ''
-        req = urllib.request.Request(
-            self.lyrics_prefix + song_id, headers=self.header
-        )
-        for word in urllib.request.urlopen(req).readlines():
-            lyrics += word.strip().decode('utf-8')
-            lyrics = lyrics.replace('<br />', '\n')
-        soup = BeautifulSoup(lyrics, 'lxml')
-        td = soup.find_all('td')
-        logia = str(td[0]).replace('<br/>', '\n').split('</td></tr>')
-        print('\n')
-        for i in logia:
-            if i.count('</table></div>'):
-                # remove advertisement string at the last 50 characters
-                print((re.sub('<[^>]*>', '', i)).strip()[:-50])
-                print('Url: ' + self.lyrics_prefix + song_id)
-                break
+    def __init__(self):
+        self.session = requests.Session()
+        user_agent = 'Mozilla/5.0 (X11; Linux)'
+        self.session.headers.update({'user-agent': user_agent})
+        self.url = 'https://www.greekstixoi.gr/?s='
+        self.now_playing()
+        self.search_parser()
 
     def get_proxy(self, bus, player):
         try:
@@ -82,6 +27,10 @@ class Stixoi():
             return False
 
     def now_playing(self):
+        self.title = ''
+        self.artist = ''
+        self.album = ''
+        self.year = ''
         bus = dbus.SessionBus()
         for player in ['clementine', 'strawberry', 'sayonara']:
             proxy = self.get_proxy(bus, player)
@@ -95,86 +44,122 @@ class Stixoi():
             'org.mpris.MediaPlayer2.Player', 'Metadata'
         )
 
-        try:
-            self.artist = str(metadata.get('xesam:artist')[0])
-            if self.song_only:
-                raise TypeError
-        except TypeError:
-            self.artist = ''
-
+        self.artist = str(metadata.get('xesam:artist')[0])
         self.title = str(metadata.get('xesam:title'))
+        self.album = str(metadata.get('xesam:album'))
+        self.year = str(metadata.get('year'))
 
-        return self.title + '+' + self.artist
-
-    def search_songs(self, track_playing):
-        title = track_playing.replace("'", "")
-        string_to_search = (repr(title.encode('utf-8')).replace("b'", "").
-                            replace("\\x", "%").replace("'", "").
-                            replace(' ', '+'))
+    def search_songs(self):
+        string_to_search = ''
         search_results_html = ''
-        req = urllib.request.Request(
-            self.url_prefix + string_to_search + self.url_suffix,
-            headers=self.header
-        )
-        print('URL αναζήτησης: ' + self.url_prefix + string_to_search + self.url_suffix)
-        for word in urllib.request.urlopen(req).readlines():
-            search_results_html += word.strip().decode('utf-8')
-        return search_results_html
+        for i in self.title:
+            gramma = repr(i.encode('utf-8'))
+            gramma = gramma.replace('''b"'"''', '%27')
+            gramma = gramma.replace("b'", "", 1)
+            gramma = gramma.replace("\\x", "%")
+            gramma = gramma.replace("'", "")
+            gramma = gramma.replace(' ', '+')
+            string_to_search += gramma
+        print('--------------------------------')
+        print(f'| Τίτλος: {self.title}')
+        print(f'| Καλλιτέχνης: {self.artist}')
+        print(f'| Δίσκος: {self.album}')
+        print(f'| Έτος: {self.year}')
+        print('---------------------------------')
+        url = f'{self.url}{self.title}'
+        print('URL αναζήτησης: ', f'{self.url}{string_to_search}')
+        html = self.get_html(url)
+        return html
 
-    def search_parser(self, track_playiyng):
-        search_results_html = self.search_songs(track_playiyng)
+    def get_html(self, url):
+        req = self.session.get(url, timeout=10)
+        if req.status_code != 200:
+            print(f'Error: {req.status_code}')
+            return False
+        else:
+            return req.text
+
+    def search_parser(self):
+        search_results_html = self.search_songs()
+        if not search_results_html:
+            return
         html_soup = BeautifulSoup(search_results_html, 'lxml')
-        lista = html_soup.find_all('center')[2]
-        counter = 0
-        relevance = ''
-        song_id = ""
-        self.songs_dic = {}
-        for i in lista.find_all('td'):
-            val = i.get_text()
-            if val == '':
-                val = '-'
-            if len(val) >= 2 and val.count('%') == 1:
-                relevance = val
-                counter += 1
-                continue
-            if counter == 1:
-                song_id = re.search("song_id=([0-9]+)", str(i)).group(1)
-                self.songs_dic[song_id] = []
-                self.songs_dic[song_id].append(relevance)
-                self.songs_dic[song_id].append(val)
-                counter += 1
-                continue
-            if counter == 2:
-                self.songs_dic[song_id].append(val)
-                counter += 1
-                continue
-            if counter == 3:
-                self.songs_dic[song_id].append(val)
-                counter += 1
-                continue
-            if counter == 4:
-                self.songs_dic[song_id].append(val)
-                counter += 1
-                continue
-            if counter == 5:
-                self.songs_dic[song_id].append(val)
-                counter = 0
-        # If cannot find with title + artist try only with title
-        if len(self.songs_dic) == 0 and self.search_times == 0 and not self.song_only:
-            self.search_times = 1
-            print('Κανένα αποτέλεσμα. Αναζήτηση μόνο με τον τίτλο του τραγουδιού...')
-            self.search_parser('"' + self.title + '"')
+        songs = html_soup.find_all('article')
 
-    def list_search_results(self, song):
-        for key, val in self.songs_dic.items():
-            if key == song:
-                print('__________________\n')
-                print('Τραγούδι:    ', key, ': "' + val[1][1:] + '",', val[0])
-                print('Στιχουργός:  ', val[2])
-                print('Συνθέτης:    ', val[3])
-                print('1η εκτέλεση: ', val[4])
-                print('Έτος:        ', val[5])
+        song_url = ''
+        self.results = {}
+        counter = 0
+        for entry in songs:
+            counter += 1
+            track = entry.find("h2", 'post-title entry-title')
+            title_year = track.text.split('–')
+            if len(title_year) == 1:
+                title_year.insert(1, '')
+            artist = entry.find("p", "post-tag")
+            if artist is None:
+                artist = ''
+            else:
+                artist = artist.text.replace('Καλλιτέχνης:', '')
+            album = entry.find("p", "post-album")
+            if album is None:
+                album = ''
+            else:
+                album = album.text.replace('Album:', '')
+            self.results[counter] = {
+                'song': title_year[0],
+                'artist': artist.strip(),
+                'playing_artist_keywords': self.artist.strip().split(' '),
+                'album': album.strip(),
+                'year': title_year[1].strip(),
+                'url': track.a['href'],
+                'score': 0,
+            }
+        if counter == 0:
+            print('Ουδέν αποτέλεσμα')
+            return
+        for i in self.results:
+            if i < 5:
+                self.results[i]['score'] += 1
+            song_keys = [self.remove_accents(s.lower()) for s in self.results[i]['song'].split(' ')]
+            playing_song_keys = [self.remove_accents(s.lower()) for s in self.title.split(' ')]
+            for key in playing_song_keys:
+                if key in song_keys:
+                    self.results[i]['score'] += 1
+            if self.year == self.results[i]['year']:
+                self.results[i]['score'] += 1
+            for key in self.results[i]['playing_artist_keywords']:
+                if key in self.results[i]['artist'].split(' '):
+                    self.results[i]['score'] += 1
+
+        self.score_results = sorted(self.results.values(), key=itemgetter('score'))
+
+        url = self.score_results[-1]['url']
+        html_lyrics = self.get_html(url)
+        html_lyrics = BeautifulSoup(html_lyrics, 'lxml')
+        print('\n======== ΑΠΟΤΕΛΕΣΜΑ ΑΝΑΖΗΤΗΣΗΣ ==========')
+        print(f"|{html_lyrics.find('div', 'h2title').text}")
+        print(f"|Καλλιτέχνης: {self.score_results[-1]['artist']}")
+        print(f"|Δίσκος: {self.score_results[-1]['album']}")
+        print('--------------------------------------\n')
+        print(html_lyrics.find('div', 'lyrics').text)
+        print(f'\nURL κομματιού: {url}')
+
+    def remove_accents(self, word):
+        accents = {
+            "ά": "α",
+            "έ": "ε",
+            "ύ": "υ",
+            "ί": "ι",
+            "ό": "ο",
+            "ή": "η",
+            "ώ": "ω",
+        }
+        new_word = ''
+        for gramma in word:
+            new_word += accents.get(gramma, gramma)
+
+        return new_word
 
 
 if __name__ == '__main__':
-    app = Stixoi(sys.argv[1:])
+    app = Stixoi()
