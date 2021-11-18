@@ -150,18 +150,25 @@ class Stixoi():
                 if key in self.results[i]['artist'].split(' '):
                     self.results[i]['score'] += 1
 
-        self.score_results = sorted(self.results.values(), key=itemgetter('score'))
+        score_results = sorted(self.results.values(), key=itemgetter('score'))
 
-        url = self.score_results[-1]['url']
+        url = score_results[-1]['url']
         html_lyrics = self.get_html(url)
         html_lyrics = BeautifulSoup(html_lyrics, 'lxml')
+        details = html_lyrics.find('div', 'details')
+        det = details.find_all(rel="tag")
+        stixourgos = [i.text for i in det if str(i).count("stixourgos")][0]
+        synthetis = [i.text for i in det if str(i).count("synthetis")][0]
         print('\n======== ΑΠΟΤΕΛΕΣΜΑ ΑΝΑΖΗΤΗΣΗΣ ==========')
         print(f"|{html_lyrics.find('div', 'h2title').text}")
-        print(f"|Καλλιτέχνης: {self.score_results[-1]['artist']}")
-        print(f"|Δίσκος: {self.score_results[-1]['album']}")
+        print(f"|Καλλιτέχνης: {score_results[-1]['artist']}")
+        print(f"|Στιχουργός: {stixourgos}")
+        print(f"|Συνθέτης: {synthetis}")
+        print(f"|Δίσκος: {score_results[-1]['album']}")
         print('--------------------------------------\n')
         print(html_lyrics.find('div', 'lyrics').text)
         print(f'\nURL κομματιού: {url}')
+
 
     def remove_accents(self, word):
         accents = {
