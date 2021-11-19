@@ -173,7 +173,7 @@ class Stixoi():
         det = details.find_all(rel="tag")
         stixourgos = [i.text for i in det if str(i).count("stixourgos")][0]
         synthetis = [i.text for i in det if str(i).count("synthetis")][0]
-        print('\n======== ΑΠΟΤΕΛΕΣΜΑ ΑΝΑΖΗΤΗΣΗΣ ==========')
+        print(f"\n=== ΑΠΟΤΕΛΕΣΜΑ ΑΝΑΖΗΤΗΣΗΣ - ΒΑΘΜΟΣ: {score_results[-1]['score']} ===")
         print(f"|{html_lyrics.find('div', 'h2title').text}")
         print(f"|Καλλιτέχνης: {score_results[-1]['artist']}")
         print(f"|Στιχουργός: {stixourgos}")
