@@ -172,7 +172,10 @@ class Stixoi():
         details = html_lyrics.find('div', 'details')
         det = details.find_all(rel="tag")
         stixourgos = [i.text for i in det if str(i).count("stixourgos")][0]
-        synthetis = [i.text for i in det if str(i).count("synthetis")][0]
+        try:
+            synthetis = [i.text for i in det if str(i).count("synthetis")][0]
+        except IndexError:
+            synthetis = ''
         print(f"\n=== ΑΠΟΤΕΛΕΣΜΑ ΑΝΑΖΗΤΗΣΗΣ - ΒΑΘΜΟΣ: {score_results[-1]['score']} ===")
         print(f"|{html_lyrics.find('div', 'h2title').text}")
         print(f"|Καλλιτέχνης: {score_results[-1]['artist']}")
