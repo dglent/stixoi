@@ -105,11 +105,22 @@ class Stixoi():
         results = {}
         counter = 0
         for entry in self.songs:
+            year = ''
+            song_title = ''
             counter += 1
             track = entry.find("h2", 'post-title entry-title')
-            title_year = track.text.split('–')
-            if len(title_year) == 1:
-                title_year.insert(1, '')
+            if track.text.count('–'):
+                title_year = track.text.split('–')
+            else:
+                title_year = track.text.split('-')
+            song_title = title_year[0].strip()
+            if len(title_year) > 1:
+                # After the dash is the year
+                year = title_year[1].strip()
+                if not year.isnumeric():
+                    # After the dash is part of the song title
+                    song_title += ' ' + year
+                    year = ''
             artist = entry.find("p", "post-tag")
             if artist is None:
                 artist = ''
@@ -120,13 +131,13 @@ class Stixoi():
                 album = ''
             else:
                 album = album.text.replace('Album:', '')
-            song_title = title_year[0].replace('-', ' ')
+            song_title = song_title.replace('-', ' ')
             results[counter] = {
                 'song': song_title.strip(),
                 'artist': artist.strip(),
                 'playing_artist_keywords': self.artist.strip().split(' '),
                 'album': album.strip(),
-                'year': title_year[1].strip(),
+                'year': year,
                 'url': track.a['href'],
                 'score': 0,
             }
