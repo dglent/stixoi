@@ -69,7 +69,23 @@ class Stixoi():
         print('---------------------------------')
         url = self.url + self.title.replace("'", "+")  # replace apostrophe with +
         print('URL αναζήτησης: ', f'{self.url}{string_to_search}')
+        self.songs = []
         html = self.get_html(url)
+        html = self.find_songs_in_page(html)
+        navigation = html.find_all("div", "pagenav tf_clear tf_box tf_textr tf_clearfix")
+        if len(navigation) > 0:
+            pages = navigation[0]
+            for page in pages.find_all("a", "number"):
+                if page.text in ['2', '3', '4']:
+                    url_next = page.get('href')
+                    html = self.get_html(url_next)
+                    self.find_songs_in_page(html)
+
+    def find_songs_in_page(self, html):
+        html = BeautifulSoup(html, 'lxml')
+        songs = html.find_all('article')
+        for song in songs:
+            self.songs.append(song)
         return html
 
     def get_html(self, url):
@@ -81,16 +97,14 @@ class Stixoi():
             return req.text
 
     def search_parser(self):
-        search_results_html = self.search_songs()
-        if not search_results_html:
+        self.search_songs()
+        if len(self.songs) == 0:
             return
-        html_soup = BeautifulSoup(search_results_html, 'lxml')
-        songs = html_soup.find_all('article')
 
         song_url = ''
-        self.results = {}
+        results = {}
         counter = 0
-        for entry in songs:
+        for entry in self.songs:
             counter += 1
             track = entry.find("h2", 'post-title entry-title')
             title_year = track.text.split('–')
@@ -107,7 +121,7 @@ class Stixoi():
             else:
                 album = album.text.replace('Album:', '')
             song_title = title_year[0].replace('-', ' ')
-            self.results[counter] = {
+            results[counter] = {
                 'song': song_title.strip(),
                 'artist': artist.strip(),
                 'playing_artist_keywords': self.artist.strip().split(' '),
@@ -119,38 +133,38 @@ class Stixoi():
         if counter == 0:
             print('Ουδέν αποτέλεσμα')
             return
-        for i in self.results:
+        for i in results:
             if i < 5:
-                self.results[i]['score'] += 1
-            song_keys = [self.remove_accents(s.lower()) for s in self.results[i]['song'].split(' ')]
+                results[i]['score'] += 1
+            song_keys = [self.remove_accents(s.lower()) for s in results[i]['song'].split(' ')]
             playing_song_keys = [self.remove_accents(s.lower()) for s in self.title.split(' ')]
-            album_keys = [self.remove_accents(s.lower()) for s in self.results[i]['album'].split(' ')]
+            album_keys = [self.remove_accents(s.lower()) for s in results[i]['album'].split(' ')]
             playing_album_keys = [
                 self.remove_accents(s.lower().replace('-', ' ')) for s in self.album.split(' ')
             ]
             for key in playing_song_keys:
                 if key in song_keys:
-                    self.results[i]['score'] += 1
+                    results[i]['score'] += 1
             for key in playing_album_keys:
                 if key in album_keys:
-                    self.results[i]['score'] += 1
+                    results[i]['score'] += 1
             if (
                 self.remove_accents(self.title.lower().strip())
-                == self.remove_accents(self.results[i]['song'].lower().strip())
+                == self.remove_accents(results[i]['song'].lower().strip())
             ):
-                self.results[i]['score'] += 2
+                results[i]['score'] += 2
             if (
                 self.remove_accents(self.album.lower().strip())
-                == self.remove_accents(self.results[i]['album'].lower().strip())
+                == self.remove_accents(results[i]['album'].lower().strip())
             ):
-                self.results[i]['score'] += 2
-            if self.year == self.results[i]['year']:
-                self.results[i]['score'] += 2
-            for key in self.results[i]['playing_artist_keywords']:
-                if key in self.results[i]['artist'].split(' '):
-                    self.results[i]['score'] += 1
+                results[i]['score'] += 2
+            if self.year == results[i]['year']:
+                results[i]['score'] += 2
+            for key in results[i]['playing_artist_keywords']:
+                if key in results[i]['artist'].split(' '):
+                    results[i]['score'] += 1
 
-        score_results = sorted(self.results.values(), key=itemgetter('score'))
+        score_results = sorted(results.values(), key=itemgetter('score'))
 
         url = score_results[-1]['url']
         html_lyrics = self.get_html(url)
