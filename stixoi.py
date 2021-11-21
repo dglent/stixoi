@@ -44,7 +44,10 @@ class Stixoi():
             'org.mpris.MediaPlayer2.Player', 'Metadata'
         )
 
-        self.artist = str(metadata.get('xesam:artist')[0])
+        try:
+            self.artist = str(metadata.get('xesam:artist')[0])
+        except TypeError:
+            self.artist = ''
         self.title = str(metadata.get('xesam:title'))
         self.album = str(metadata.get('xesam:album'))
         self.year = str(metadata.get('year'))
