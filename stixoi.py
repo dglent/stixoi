@@ -185,7 +185,10 @@ class Stixoi():
         html_lyrics = BeautifulSoup(html_lyrics, 'lxml')
         details = html_lyrics.find('div', 'details')
         det = details.find_all(rel="tag")
-        stixourgos = [i.text for i in det if str(i).count("stixourgos")][0]
+        try:
+            stixourgos = [i.text for i in det if str(i).count("stixourgos")][0]
+        except IndexError:
+            stixourgos = ''
         try:
             synthetis = [i.text for i in det if str(i).count("synthetis")][0]
         except IndexError:
