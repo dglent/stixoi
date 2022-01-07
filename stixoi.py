@@ -63,6 +63,9 @@ class Stixoi():
             gramma = gramma.replace("\\x", "%")
             gramma = gramma.replace("'", "")
             gramma = gramma.replace(' ', '+')
+            gramma = gramma.replace('(', '')
+            gramma = gramma.replace(')', '')
+
             string_to_search += gramma
         print('--------------------------------')
         print(f'| Τίτλος: {self.title}')
@@ -70,7 +73,11 @@ class Stixoi():
         print(f'| Δίσκος: {self.album}')
         print(f'| Έτος: {self.year}')
         print('---------------------------------')
-        url = self.url + self.title.replace("'", "+")  # replace apostrophe with +
+        search_string_url = self.title
+        search_string_url = search_string_url.replace("'", "+")  # replace apostrophe with +
+        search_string_url = search_string_url.replace('(', '')
+        search_string_url = search_string_url.replace(')', '')
+        url = self.url + search_string_url
         print('URL αναζήτησης: ', f'{self.url}{string_to_search}')
         self.songs = []
         html = self.get_html(url)
