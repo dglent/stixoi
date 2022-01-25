@@ -1,10 +1,8 @@
 #!/usr/bin/python
 
 from bs4 import BeautifulSoup
-import re
 import requests
 import dbus
-import sys
 from operator import itemgetter
 
 
@@ -54,7 +52,6 @@ class Stixoi():
 
     def search_songs(self):
         string_to_search = ''
-        search_results_html = ''
         for i in self.title:
             i = i.replace("'", " ")  # replace apostrophe with space
             gramma = repr(i.encode('utf-8'))
@@ -111,7 +108,6 @@ class Stixoi():
         if len(self.songs) == 0:
             return
 
-        song_url = ''
         results = {}
         counter = 0
         for entry in self.songs:
@@ -201,6 +197,7 @@ class Stixoi():
         except IndexError:
             synthetis = ''
         print(f"\n=== ΑΠΟΤΕΛΕΣΜΑ ΑΝΑΖΗΤΗΣΗΣ - ΒΑΘΜΟΣ: {score_results[-1]['score']} ===")
+
         print(f"|{html_lyrics.find('div', 'h2title').text}")
         print(f"|Καλλιτέχνης: {score_results[-1]['artist']}")
         print(f"|Στιχουργός: {stixourgos}")
@@ -209,7 +206,6 @@ class Stixoi():
         print('--------------------------------------\n')
         print(html_lyrics.find('div', 'lyrics').text)
         print(f'\nURL κομματιού: {url}')
-
 
     def remove_accents(self, word):
         accents = {
